@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alertas — Calendário Econômico 3★ · WinPrime</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: #f4f6fa; color: #1a2230;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  padding: 16px;
+}
+.wrap { max-width: 860px; margin: 0 auto; }
+header.top {
+  background: #0f2038; color: #fff; border-radius: 14px; padding: 18px 20px;
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+}
+header.top h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing:.2px;}
+header.top .sub { font-size: 12.5px; opacity: .8; margin-top: 3px; }
+.clock { text-align: right; }
+.clock .big { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+.clock .tz { font-size: 11.5px; opacity: .75; margin-top: 4px; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; align-items:center; }
+button {
+  font-size: 14px; font-weight: 600; border: none; border-radius: 10px;
+  padding: 10px 16px; cursor: pointer;
+}
+.btn-primary { background: #1e6bff; color: #fff; }
+.btn-primary:hover { background:#1559d6; }
+.btn-ghost { background: #e6ebf3; color: #22304a; }
+.btn-ghost:hover { background:#d8dfec; }
+select { font-size:13.5px; padding:9px 10px; border-radius:10px; border:1px solid #cfd6e2; background:#fff; color:#22304a; max-width:230px; }
+label.sel { font-size:12.5px; color:#48566b; display:flex; align-items:center; gap:6px; }
+.status-pill { font-size:12.5px; padding:6px 12px; border-radius:999px; display:inline-flex; align-items:center; gap:6px; }
+.on { background:#e3f7e8; color:#137a34; }
+.off { background:#fdeaea; color:#b3261e; }
+
+.nextline {
+  background:#fff; border:1px solid #e3e8f0; border-radius:12px; padding:14px 16px; margin-bottom:14px;
+  font-size:15px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+}
+.nextline b { color:#0f2038; }
+
+#alertBanner {
+  display:none; position: sticky; top: 8px; z-index: 50;
+  background: #b3261e; color:#fff; border-radius:14px; padding:18px 20px; margin-bottom:14px;
+  box-shadow: 0 8px 24px rgba(179,38,30,.35);
+  animation: pulse 1s infinite;
+}
+@keyframes pulse { 0%,100%{ box-shadow:0 8px 24px rgba(179,38,30,.35);} 50%{ box-shadow:0 8px 34px rgba(179,38,30,.75);} }
+#alertBanner .a-title { font-size:13px; text-transform:uppercase; letter-spacing:1px; opacity:.9; }
+#alertBanner .a-event { font-size:20px; font-weight:800; margin-top:4px; }
+#alertBanner .a-meta { font-size:14px; margin-top:6px; opacity:.95; }
+#alertBanner .a-actions { display:flex; gap:8px; margin-top:12px; }
+#alertBanner button { background:#fff; color:#b3261e; }
+
+table { width:100%; border-collapse: collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(20,30,50,.06); }
+th { text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:#6b7787; background:#eef2f8; padding:11px 12px; }
+td { padding:12px; border-top:1px solid #eef1f6; font-size:14.5px; vertical-align:middle; }
+tr.done td { color:#98a2b3; }
+tr.soon { background:#fff6f5; }
+tr.soon td { color:#7a140e; font-weight:600; }
+.time-cell { font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap; }
+.flag { font-size:18px; margin-right:6px; }
+.badge { font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap; display:inline-block; }
+.b-wait { background:#eef2f8; color:#48566b; }
+.b-soon { background:#b3261e; color:#fff; }
+.b-done { background:#f0f2f5; color:#98a2b3; }
+.cd { font-variant-numeric:tabular-nums; }
+
+footer { margin-top:16px; font-size:12px; color:#7a869a; line-height:1.6; }
+.dot { color:#c3cbd6; }
+.empty { background:#fff; border:1px dashed #cfd6e2; border-radius:12px; padding:24px; text-align:center; color:#7a869a; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>📅 Alertas — Calendário Econômico <span style="color:#ffd54a">★★★</span></h1>
+      <div class="sub">Somente eventos de <b>3 estrelas</b> (alto impacto) · Fonte: Investing.com · <span id="dateLabel"></span></div>
+    </div>
+    <div class="clock">
+      <div class="big" id="clock">--:--:--</div>
+      <div class="tz">Horário de Brasília (GMT-3)</div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <button class="btn-primary" id="enableBtn">🔔 Ativar alertas + voz</button>
+    <button class="btn-ghost" id="testBtn">▶ Testar alerta (5 min simulado)</button>
+    <label class="sel">🎙️ Voz: <select id="voiceSel"></select></label>
+    <button class="btn-ghost" id="voiceTestBtn">🔊 Ouvir voz</button>
+    <span class="status-pill off" id="alertState">Alertas desativados</span>
+  </div>
+
+  <div id="alertBanner">
+    <div class="a-title">⚠ Faltam <span id="alertMin">5</span> minutos</div>
+    <div class="a-event" id="alertEvent">—</div>
+    <div class="a-meta" id="alertMeta">—</div>
+    <div class="a-actions">
+      <button id="repeatBtn">🔊 Repetir locução</button>
+      <button id="dismissBtn">Ok, entendi</button>
+    </div>
+  </div>
+
+  <div class="nextline" id="nextLine">Carregando…</div>
+
+  <table id="tbl">
+    <thead>
+      <tr><th style="width:74px">Hora</th><th style="width:150px">País</th><th>Evento</th><th style="width:150px">Situação</th></tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div class="empty" id="emptyMsg" style="display:none">Nenhum evento de 3 estrelas para esta data.</div>
+
+  <footer>
+    <div><b>Como funciona:</b> o painel dispara aviso visual, sonoro e <b>locução por voz feminina</b> <b>5 minutos antes</b> de cada evento de 3 estrelas. Funciona enquanto esta página estiver aberta.</div>
+    <div style="margin-top:6px">Última atualização dos dados: <span id="lastUpd">—</span> <span class="dot">·</span> Atualização automática (GitHub Actions) das 08:50 às 18:50.</div>
+    <div style="margin-top:6px" id="voiceNote"></div>
+  </footer>
+
+</div>
+
+<script>
+// ====== DADOS ======
+// Carregados de events.json (atualizado automaticamente pelo GitHub Actions).
+let CAL = { dateLabel: "carregando…", lastUpdated: "—", events: [] };
+const LEAD_MS = 5 * 60 * 1000; // 5 minutos
+
+async function loadData(){
+  try{
+    const r = await fetch('events.json?t=' + Date.now(), { cache: 'no-store' });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    if(data && Array.isArray(data.events)){
+      CAL = data;
+      document.getElementById('dateLabel').textContent = CAL.dateLabel || '';
+      document.getElementById('lastUpd').textContent = CAL.lastUpdated || '—';
+    }
+  }catch(e){
+    document.getElementById('nextLine').innerHTML = '⚠ Não foi possível carregar os dados (events.json). Tentando novamente…';
+  }
+}
+
+// ====== ESTADO ======
+let alertsOn = false;
+let audioCtx = null;
+const fired = new Set();      // eventos já alertados (T-5)
+let lastSpokenText = '';
+
+// ---------- VOZ (Web Speech API) ----------
+let voices = [], selectedVoice = null;
+const FEM_HINTS = /maria|francisca|luciana|fernanda|vit[oó]ria|camila|helena|joana|catarina|google portugu|ana|bianca|f[eê]mea|female|mulher/i;
+const MALE_HINTS = /daniel|felipe|ricardo|jo[aã]o|paulo|male|masc/i;
+
+function refreshVoiceList(){
+  const all = ('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : [];
+  let ptbr = all.filter(v=>/pt(-|_)?br/i.test(v.lang));
+  let pt   = all.filter(v=>/^pt/i.test(v.lang));
+  voices = ptbr.length ? ptbr : (pt.length ? pt : all);
+
+  const sel = document.getElementById('voiceSel');
+  sel.innerHTML = '';
+  voices.forEach((v,i)=>{
+    const o = document.createElement('option');
+    o.value = i; o.textContent = v.name + ' (' + v.lang + ')';
+    sel.appendChild(o);
+  });
+
+  let idx = voices.findIndex(v=>/pt(-|_)?br/i.test(v.lang) && FEM_HINTS.test(v.name) && !MALE_HINTS.test(v.name));
+  if(idx < 0) idx = voices.findIndex(v=>/pt(-|_)?br/i.test(v.lang) && !MALE_HINTS.test(v.name));
+  if(idx < 0) idx = voices.length ? 0 : -1;
+  if(idx >= 0){ selectedVoice = voices[idx]; sel.value = idx; }
+
+  const note = document.getElementById('voiceNote');
+  if(!('speechSynthesis' in window)){
+    note.innerHTML = '⚠ Seu navegador não suporta locução por voz.';
+  } else if(!voices.length){
+    note.innerHTML = '⏳ Carregando vozes do sistema… se a lista ficar vazia, seu dispositivo pode não ter voz em português instalada.';
+  } else {
+    note.innerHTML = 'Voz selecionada automaticamente (feminina pt-BR quando disponível). Você pode trocar no seletor acima.';
+  }
+}
+if('speechSynthesis' in window){
+  window.speechSynthesis.onvoiceschanged = refreshVoiceList;
+}
+refreshVoiceList();
+
+document.getElementById('voiceSel').onchange = (e)=>{
+  const i = parseInt(e.target.value,10);
+  if(!isNaN(i) && voices[i]) selectedVoice = voices[i];
+};
+
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  try{
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'pt-BR';
+    if(selectedVoice) u.voice = selectedVoice;
+    u.rate = 1.05;
+    u.pitch = 1.3;
+    u.volume = 1;
+    window.speechSynthesis.speak(u);
+    lastSpokenText = text;
+  }catch(e){}
+}
+function speechText(ev, minutesLeft){
+  // Frase fixa solicitada, sempre em voz feminina
+  return 'Querido aluno, notícia de 3 estrelas daqui 5 minutos';
+}
+
+// ---------- ÁUDIO (beep) ----------
+function beepOnce(freq, t0, dur){
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type='sine'; o.frequency.value=freq;
+  o.connect(g); g.connect(audioCtx.destination);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(0.3, t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  o.start(t0); o.stop(t0+dur);
+}
+function playChime(){
+  if(!audioCtx) return;
+  const t = audioCtx.currentTime;
+  beepOnce(880, t, 0.16); beepOnce(1245, t+0.18, 0.16); beepOnce(1660, t+0.36, 0.2);
+}
+
+// ---------- horário de Brasília ----------
+function nowMs(){ return Date.now(); }
+function brClock(){
+  return new Intl.DateTimeFormat('pt-BR',{ timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false }).format(new Date());
+}
+function hmFromIso(iso){
+  return new Intl.DateTimeFormat('pt-BR',{ timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit', hour12:false }).format(new Date(iso));
+}
+function fmtDelta(ms){
+  if(ms < 0) ms = 0;
+  const s = Math.floor(ms/1000);
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  if(h>0) return h+'h '+String(m).padStart(2,'0')+'m';
+  return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+
+// ---------- disparo de alerta ----------
+function triggerAlert(ev, minutesLeft){
+  document.getElementById('alertMin').textContent = minutesLeft;
+  document.getElementById('alertEvent').textContent = ev.flag+' '+ev.name;
+  document.getElementById('alertMeta').textContent = 'Divulgação às '+hmFromIso(ev.iso)+' (Brasília) · '+ev.cur;
+  document.getElementById('alertBanner').style.display = 'block';
+  if(alertsOn){
+    playChime();
+    setTimeout(()=> speak(speechText(ev, minutesLeft)), 700);
+    if('Notification' in window && Notification.permission === 'granted'){
+      try { new Notification('⚠ '+minutesLeft+' min — '+ev.name, { body:'Divulgação às '+hmFromIso(ev.iso)+' (Brasília)' }); } catch(e){}
+    }
+  }
+}
+document.getElementById('dismissBtn').onclick = ()=>{ document.getElementById('alertBanner').style.display='none'; window.speechSynthesis && window.speechSynthesis.cancel(); };
+document.getElementById('repeatBtn').onclick = ()=>{ if(lastSpokenText) speak(lastSpokenText); };
+
+// ---------- ativar ----------
+document.getElementById('enableBtn').onclick = async ()=>{
+  try {
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') await audioCtx.resume();
+    playChime();
+  } catch(e){}
+  refreshVoiceList();
+  speak('Querido aluno, os alertas foram ativados. Vou te avisar cinco minutos antes de cada notícia de três estrelas.');
+  if('Notification' in window && Notification.permission === 'default'){
+    try { await Notification.requestPermission(); } catch(e){}
+  }
+  alertsOn = true;
+  const pill = document.getElementById('alertState');
+  pill.textContent = 'Alertas + voz ativados'; pill.className = 'status-pill on';
+};
+
+document.getElementById('voiceTestBtn').onclick = ()=>{
+  speak('Querido aluno, notícia de 3 estrelas daqui 5 minutos');
+};
+
+document.getElementById('testBtn').onclick = ()=>{
+  const ev = { iso: new Date(nowMs()+LEAD_MS-2000).toISOString(), cur:'TESTE', flag:'🧪', name:'Evento de teste' };
+  triggerAlert(ev, 5);
+};
+
+// ---------- render ----------
+function render(){
+  document.getElementById('clock').textContent = brClock();
+  const now = nowMs();
+  const tbody = document.getElementById('tbody');
+  const evs = (CAL.events||[]).slice().sort((a,b)=> new Date(a.iso)-new Date(b.iso));
+
+  document.getElementById('emptyMsg').style.display = evs.length ? 'none':'block';
+  document.getElementById('tbl').style.display = evs.length ? '':'none';
+
+  let nextEv = null;
+  tbody.innerHTML = '';
+  evs.forEach((ev)=>{
+    const t = new Date(ev.iso).getTime();
+    const delta = t - now;
+    const key = ev.iso+'|'+ev.name;
+
+    if(delta <= LEAD_MS && delta > 0 && !fired.has(key)){
+      fired.add(key);
+      triggerAlert(ev, Math.max(1, Math.round(delta/60000)));
+    }
+
+    let cls='', badge='', badgeCls='';
+    if(delta <= 0){ cls='done'; badge='Divulgado'; badgeCls='b-done'; }
+    else if(delta <= LEAD_MS){ cls='soon'; badge='⚠ '+fmtDelta(delta); badgeCls='b-soon'; if(!nextEv) nextEv=ev; }
+    else { badge='Faltam '+fmtDelta(delta); badgeCls='b-wait'; if(!nextEv) nextEv=ev; }
+
+    const tr = document.createElement('tr');
+    tr.className = cls;
+    tr.innerHTML = '<td class="time-cell">'+hmFromIso(ev.iso)+'</td>'+
+      '<td><span class="flag">'+ev.flag+'</span>'+ev.cur+'</td>'+
+      '<td>'+ev.name+'</td>'+
+      '<td><span class="badge '+badgeCls+' cd">'+badge+'</span></td>';
+    tbody.appendChild(tr);
+  });
+
+  const nl = document.getElementById('nextLine');
+  if(nextEv){
+    const d = new Date(nextEv.iso).getTime()-now;
+    nl.innerHTML = 'Próximo evento 3★: <b>'+nextEv.flag+' '+nextEv.name+'</b> às <b>'+hmFromIso(nextEv.iso)+'</b> · faltam <b class="cd">'+fmtDelta(d)+'</b>';
+  } else if(evs.length){
+    nl.innerHTML = '✅ Todos os eventos de 3★ de hoje já foram divulgados. O painel se atualiza automaticamente.';
+  } else {
+    nl.innerHTML = 'Sem eventos de 3★ carregados para hoje.';
+  }
+}
+
+// ---------- inicialização ----------
+loadData().then(render);
+setInterval(render, 1000);
+// recarrega os dados a cada 5 minutos para pegar novos commits do Actions
+setInterval(()=>loadData(), 5 * 60 * 1000);
+</script>
+</body>
+</html>
