@@ -1,0 +1,13 @@
+{
+  "dateLabel": "quarta-feira, 12 de agosto de 2026",
+  "lastUpdated": "12/08/2026 06:28 (GMT-3)",
+  "events": [
+    { "iso": "2026-08-12T03:00:00-03:00", "cur": "DE", "flag": "🇩🇪", "name": "IPC - Alemanha (Mensal) (Jul)" },
+    { "iso": "2026-08-12T09:00:00-03:00", "cur": "BR", "flag": "🇧🇷", "name": "Crescimento do Setor de Serviços (Mensal) (Jun)" },
+    { "iso": "2026-08-12T09:00:00-03:00", "cur": "BR", "flag": "🇧🇷", "name": "Crescimento do Setor de Serviços (Anual) (Jun)" },
+    { "iso": "2026-08-12T09:30:00-03:00", "cur": "US", "flag": "🇺🇸", "name": "IPC EUA (Anual) (Jul)" },
+    { "iso": "2026-08-12T09:30:00-03:00", "cur": "US", "flag": "🇺🇸", "name": "IPC (Mensal) (Jul)" },
+    { "iso": "2026-08-12T09:30:00-03:00", "cur": "US", "flag": "🇺🇸", "name": "IPC-núcleo (Mensal) (Jul)" },
+    { "iso": "2026-08-12T11:30:00-03:00", "cur": "US", "flag": "🇺🇸", "name": "Estoques de Petróleo Bruto" }
+  ]
+}
