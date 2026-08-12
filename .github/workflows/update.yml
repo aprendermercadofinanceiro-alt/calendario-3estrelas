@@ -1,0 +1,49 @@
+name: Atualizar calendário 3★
+
+on:
+  schedule:
+    # Horários em UTC. Brasília = UTC-3, sem horário de verão.
+    # 11:50–21:50 UTC  ==  08:50–18:50 (Brasília), de hora em hora, todos os dias.
+    - cron: "50 11-21 * * *"
+  workflow_dispatch: {}   # permite rodar manualmente pelo botão "Run workflow"
+
+# Necessário para o job conseguir dar commit no events.json
+permissions:
+  contents: write
+
+concurrency:
+  group: atualizar-calendario
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Coletar eventos 3★
+        run: python scraper.py
+
+      - name: Commit do events.json (se mudou)
+        run: |
+          git config user.name  "winprime-bot"
+          git config user.email "actions@github.com"
+          if ! git diff --quiet -- events.json; then
+            git add events.json
+            git commit -m "chore: atualiza eventos 3★ ($(date -u '+%Y-%m-%d %H:%M UTC'))"
+            git push
+          else
+            echo "Sem mudanças em events.json."
+          fi
